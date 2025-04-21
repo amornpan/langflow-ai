@@ -9,34 +9,17 @@
 ```mermaid
 flowchart TD
     A[ผู้ใช้] -->|คำถาม| B[Tool Calling Agent]
-    
     B -->|วิเคราะห์คำถาม| C{เลือก Tool}
-    
     C -->|ค้นหาข้อมูล| D[Search Tool]
     C -->|คำนวณ| E[Calculator Tool]
     C -->|ตอบโดยตรง| F[Final Answer]
-    
     D -->|ผลการค้นหา| G[Observation]
     E -->|ผลการคำนวณ| G
-    
     G --> B
     B -->|สร้างคำตอบสุดท้าย| H[คำตอบ]
     H --> A
-    
     D -->|Vector Search| I[Vector Store]
     I -->|ข้อมูลที่เกี่ยวข้อง| D
-    
-    subgraph กระบวนการคิดของ Agent
-    B
-    C
-    G
-    end
-    
-    subgraph Tools
-    D
-    E
-    I
-    end
 ```
 
 แผนภาพข้างต้นแสดงการทำงานของ Simple Agent โดย:
@@ -91,7 +74,7 @@ classDiagram
     ToolCallingAgent --> ChatMessage : sends response to
 ```
 
-## การทำงานของ RAG ร่วมกับ Simple Agent
+## การทำงานของ Agent แบบละเอียด
 
 ```mermaid
 sequenceDiagram
@@ -102,83 +85,100 @@ sequenceDiagram
     participant Calc as Calculator Tool
     
     User->>Agent: ถามคำถามเกี่ยวกับอาหารไทย
-    
-    Agent->>Agent: วิเคราะห์คำถามและตัดสินใจเลือก Tool
+    Agent->>Agent: วิเคราะห์คำถามและเขียน Thought
     
     alt ต้องการข้อมูลเฉพาะ
-        Agent->>Search: ใช้ Search Tool
+        Agent->>Search: เลือกใช้ Search Tool
         Search->>Vector: ค้นหาข้อมูลอาหารไทยที่เกี่ยวข้อง
         Vector-->>Search: ส่งข้อมูลที่เกี่ยวข้อง
-        Search-->>Agent: ส่งผลการค้นหา
+        Search-->>Agent: ส่งผลการค้นหา (Observation)
+        Agent->>Agent: วิเคราะห์ข้อมูลที่ได้รับและเขียน Thought ใหม่
     else ต้องการคำนวณ
-        Agent->>Calc: ใช้ Calculator Tool
-        Calc-->>Agent: ส่งผลการคำนวณ
+        Agent->>Calc: เลือกใช้ Calculator Tool
+        Calc-->>Agent: ส่งผลการคำนวณ (Observation)
+        Agent->>Agent: วิเคราะห์ผลการคำนวณและเขียน Thought ใหม่
     end
     
-    Agent->>User: สร้างคำตอบโดยใช้ข้อมูลที่ได้จาก Tool
+    Agent->>Agent: ตัดสินใจว่ามีข้อมูลเพียงพอหรือต้องใช้ Tool เพิ่มเติม
+    
+    opt ต้องการข้อมูลเพิ่มเติม
+        Agent->>Search: ใช้ Search Tool อีกครั้ง
+        Search->>Vector: ค้นหาข้อมูลเพิ่มเติม
+        Vector-->>Search: ส่งข้อมูลเพิ่มเติม
+        Search-->>Agent: ส่งผลการค้นหา (Observation)
+        Agent->>Agent: วิเคราะห์ข้อมูลเพิ่มเติมและเขียน Thought ใหม่
+    end
+    
+    Agent->>User: สร้างคำตอบสุดท้ายจากข้อมูลที่รวบรวมได้
 ```
 
-## โครงสร้างของ Flow ใน Langflow
+## โครงสร้างของ Simple Agent Flow ใน Langflow
 
 ```mermaid
 graph TD
     A[Chat Input Component] --> B[Tool Calling Agent]
     B --> C[Chat Output Component]
-    
     D[OpenAI] --> B
-    
     E[Search Tool] --> B
     F[Calculator Tool] --> B
-    
-    G[Vector Store] --> E
-    
-    H[Text Splitter] --> G
-    I[Embeddings] --> G
-    
-    J[Document Loader] --> H
-    
-    style A fill:#f9d5e5,stroke:#333,stroke-width:2px
-    style B fill:#d5e5f9,stroke:#333,stroke-width:2px
-    style C fill:#f9d5e5,stroke:#333,stroke-width:2px
-    style D fill:#ffefc1,stroke:#333,stroke-width:2px
-    style E fill:#c1ffe4,stroke:#333,stroke-width:2px
-    style F fill:#c1ffe4,stroke:#333,stroke-width:2px
-    style G fill:#e4c1ff,stroke:#333,stroke-width:2px
-    style H fill:#c1e0ff,stroke:#333,stroke-width:2px
-    style I fill:#c1e0ff,stroke:#333,stroke-width:2px
-    style J fill:#ffc1c1,stroke:#333,stroke-width:2px
+    G[URL Tool] -.ไม่ใช้ในโปรเจกต์นี้.-> B
+    H[Vector Store] --> E
+    I[Text Splitter] --> H
+    J[Embeddings] --> H
+    K[Document Loader] --> I
 ```
 
 ## องค์ประกอบหลักของ Simple Agent Flow
 
 ```mermaid
 mindmap
-    root(Simple Agent Flow)
-        Tool Calling Agent
-            ::icon(fa fa-brain)
-            ใช้ LLM วิเคราะห์คำถาม
-            เลือก Tool ที่เหมาะสม
-            System Prompt กำหนดพฤติกรรม
-        Search Tool
-            ::icon(fa fa-search)
-            เชื่อมต่อกับ Vector Store
-            ค้นหาข้อมูลอาหารไทย
-            รองรับการค้นหาด้วยภาษาธรรมชาติ
-        Calculator Tool
-            ::icon(fa fa-calculator)
-            คำนวณส่วนผสมอาหาร
-            แปลงหน่วยการวัด
-            คำนวณแคลอรี่และคุณค่าทางโภชนาการ
-        Vector Store
-            ::icon(fa fa-database)
-            เก็บข้อมูลอาหารไทย
-            สร้าง Embeddings จากข้อมูล
-            ใช้ Similarity Search ค้นหาข้อมูล
-        Prompt Template
-            ::icon(fa fa-file-text)
-            กำหนดบทบาทของ Agent
-            แนะนำวิธีใช้เครื่องมือ
-            ระบุรูปแบบการตอบกลับ
+  root((Simple Agent Flow))
+    Tool Calling Agent
+      ใช้ LLM วิเคราะห์คำถาม
+      เลือก Tool ที่เหมาะสม
+      แสดงกระบวนการคิด (Thoughts)
+      กำหนดจำนวนรอบสูงสุดในการคิด (max_iterations)
+    Search Tool
+      เชื่อมต่อกับ Vector Store
+      ค้นหาข้อมูลอาหารไทย
+      รองรับการค้นหาด้วยภาษาธรรมชาติ
+      กำหนดจำนวนผลลัพธ์ที่ต้องการ
+    Calculator Tool
+      คำนวณส่วนผสมอาหาร
+      แปลงหน่วยการวัด
+      คำนวณแคลอรี่และคุณค่าทางโภชนาการ
+      รองรับสูตรคณิตศาสตร์ทั่วไป
+    Vector Store
+      เก็บข้อมูลอาหารไทย
+      สร้าง Embeddings จากข้อมูล
+      ใช้ Similarity Search ค้นหาข้อมูล
+      รองรับการอัปเดตข้อมูลใหม่
+    System Prompt
+      กำหนดบทบาทของ Agent
+      อธิบายการใช้งาน Tools
+      กำหนดโครงสร้างคำตอบ
+      กำหนดบุคลิกภาพของ Agent
+```
+
+## กระบวนการคิดของ Simple Agent
+
+การทำงานของ Simple Agent สามารถแสดงเป็นกระบวนการคิดได้ดังนี้:
+
+```mermaid
+graph LR
+    A[รับคำถาม] --> B[วิเคราะห์คำถาม]
+    B --> C{ต้องใช้ Tool หรือไม่?}
+    C -->|ไม่ต้องใช้| D[ตอบจากความรู้พื้นฐาน]
+    C -->|ต้องใช้| E{เลือก Tool}
+    E -->|Search Tool| F[ค้นหาข้อมูล]
+    E -->|Calculator Tool| G[คำนวณ]
+    F --> H[รวบรวมข้อมูลจาก Observation]
+    G --> H
+    H --> I{มีข้อมูลเพียงพอหรือไม่?}
+    I -->|ไม่เพียงพอ| E
+    I -->|เพียงพอ| J[สร้างคำตอบสุดท้าย]
+    D --> K[ส่งคำตอบให้ผู้ใช้]
+    J --> K
 ```
 
 ## ขั้นตอนการสร้าง Simple Agent สำหรับข้อมูลอาหารไทย
@@ -202,42 +202,32 @@ flowchart LR
 ```mermaid
 flowchart TD
     A[เปิด Langflow] --> B[สร้าง Flow ใหม่]
-    B --> C{เลือก Template}
-    C --> D[Simple Agent]
-    D --> E[Flow พื้นฐานถูกสร้างขึ้น]
+    B --> C[เลือก Simple Agent]
+    C --> D[Flow พื้นฐานถูกสร้างขึ้น]
 ```
 
 1. เปิด Langflow ในเบราว์เซอร์
 2. คลิกปุ่ม **New Flow**
 3. เลือก **Simple Agent** จากรายการ Template
 
-### ขั้นตอนที่ 3: ตั้งค่าองค์ประกอบหลัก
+### ขั้นตอนที่ 3: ปรับแต่งองค์ประกอบหลัก
 
 ```mermaid
 flowchart TD
-    subgraph "1. ตั้งค่า OpenAI API"
-        A[คลิกที่ OpenAI Component] --> B[ใส่ API Key]
-    end
+    A[คลิกที่ OpenAI Component] --> B[ใส่ API Key]
+    B --> C[เลือก Model เช่น gpt-4-turbo]
     
-    subgraph "2. ตั้งค่า Document Loader"
-        C[คลิกที่ Document Loader] --> D[ระบุเส้นทางไปยัง thai_food_information.txt]
-        C --> E[ระบุเส้นทางไปยัง thai_ingredients.txt]
-    end
+    D[คลิกที่ Document Loader] --> E[เลือก Text Loader]
+    E --> F[ระบุเส้นทางไปยังไฟล์ข้อมูลอาหารไทย]
     
-    subgraph "3. ตั้งค่า Text Splitter"
-        F[คลิกที่ Text Splitter] --> G[ตั้งค่า Chunk Size = 1000]
-        G --> H[ตั้งค่า Chunk Overlap = 200]
-    end
+    G[คลิกที่ Text Splitter] --> H[ตั้งค่า Chunk Size = 1000]
+    H --> I[ตั้งค่า Chunk Overlap = 200]
     
-    subgraph "4. ตั้งค่า Vector Store"
-        I[คลิกที่ Vector Store] --> J[เลือกประเภท (FAISS)]
-        J --> K[ตั้งค่า Index Name]
-    end
+    J[คลิกที่ Vector Store] --> K[เลือกประเภท FAISS]
+    K --> L[ตั้งค่า Index Name = thai_food_store]
     
-    subgraph "5. ตั้งค่า Tool Calling Agent"
-        L[คลิกที่ Tool Calling Agent] --> M[แก้ไข System Prompt]
-        M --> N[เพิ่มรายละเอียดเกี่ยวกับอาหารไทย]
-    end
+    M[คลิกที่ Tool Calling Agent] --> N[แก้ไข System Prompt]
+    N --> O[เพิ่มคำอธิบายเกี่ยวกับอาหารไทย]
 ```
 
 ### ขั้นตอนที่ 4: เชื่อมต่อองค์ประกอบ
@@ -247,25 +237,21 @@ flowchart LR
     A[Document Loader] --> B[Text Splitter]
     B --> C[Vector Store]
     D[Embeddings] --> C
-    
     C --> E[Search Tool]
-    F[Calculator Tool] --> G[Tool Calling Agent]
-    E --> G
-    
-    H[OpenAI] --> G
-    I[Prompt Template] --> G
-    
-    J[Chat Input] --> G
-    G --> K[Chat Output]
+    E --> F[Tool Calling Agent]
+    G[Calculator Tool] --> F
+    H[OpenAI] --> F
+    I[Chat Input] --> F
+    F --> J[Chat Output]
 ```
 
 ### ขั้นตอนที่ 5: ปรับแต่ง System Prompt
 
 ```mermaid
 graph TD
-    A[เปิด Tool Calling Agent] --> B[แก้ไข System Prompt]
+    A[คลิกที่ Tool Calling Agent] --> B[แก้ไข System Prompt]
     B --> C[ระบุบทบาทเป็นผู้เชี่ยวชาญด้านอาหารไทย]
-    C --> D[อธิบายวิธีการใช้ Tool]
+    C --> D[อธิบายวิธีการใช้ Tools]
     D --> E[กำหนดรูปแบบการตอบคำถาม]
 ```
 
@@ -287,131 +273,146 @@ graph TD
 เมื่อตอบคำถามเกี่ยวกับวิธีทำอาหาร ให้แสดงส่วนผสมและขั้นตอนอย่างชัดเจน
 ```
 
-## การทดสอบ Simple Agent
+## การทำงานของ Simple Agent ในแต่ละขั้นตอน
 
 ```mermaid
 sequenceDiagram
     participant User as ผู้ใช้
-    participant Agent as Simple Agent
+    participant Input as Chat Input
+    participant Agent as Tool Calling Agent
+    participant Search as Search Tool
+    participant Vector as Vector Store
+    participant Calc as Calculator Tool
+    participant Output as Chat Output
     
-    User->>Agent: คุณมีเครื่องมืออะไรบ้าง?
-    Agent->>User: ฉันมีเครื่องมือดังนี้:<br/>1. Search Tool<br/>2. Calculator
+    User->>Input: พิมพ์คำถาม
+    Input->>Agent: ส่งคำถาม
     
-    User->>Agent: วัตถุดิบในการทำต้มยำกุ้งมีอะไรบ้าง?
-    Agent->>Agent: คิด: ฉันต้องใช้ Search Tool เพื่อค้นหาวัตถุดิบต้มยำกุ้ง
-    Agent->>User: [แสดงวัตถุดิบต้มยำกุ้งที่ค้นพบ]
+    Agent->>Agent: วิเคราะห์คำถามและเขียน Thought
+    Agent->>Agent: ตัดสินใจเลือก Tool
     
-    User->>Agent: ถ้าฉันต้องทำต้มยำกุ้งสำหรับ 5 คน ต้องใช้วัตถุดิบเท่าไร?
-    Agent->>Agent: คิด: ฉันต้องใช้ Search Tool ค้นหาวัตถุดิบมาตรฐาน<br/>และใช้ Calculator คำนวณปริมาณสำหรับ 5 คน
-    Agent->>User: [แสดงคำตอบพร้อมการคำนวณ]
+    alt เลือกใช้ Search Tool
+        Agent->>Search: ส่งคำถามไปค้นหา
+        Search->>Vector: ค้นหาในฐานข้อมูล
+        Vector-->>Search: คืนข้อมูลที่เกี่ยวข้อง
+        Search-->>Agent: ส่ง Observation กลับ
+    else เลือกใช้ Calculator Tool
+        Agent->>Calc: ส่งนิพจน์ที่ต้องการคำนวณ
+        Calc->>Calc: ประมวลผลการคำนวณ
+        Calc-->>Agent: ส่งผลลัพธ์การคำนวณกลับ
+    end
+    
+    Agent->>Agent: ประมวลผลข้อมูลที่ได้รับ
+    
+    opt ถ้าข้อมูลไม่เพียงพอ
+        Agent->>Agent: เขียน Thought ใหม่
+        Agent->>Agent: เลือก Tool เพิ่มเติม
+        
+        alt เลือกใช้ Search Tool อีกครั้ง
+            Agent->>Search: ส่งคำถามใหม่ไปค้นหา
+            Search->>Vector: ค้นหาในฐานข้อมูล
+            Vector-->>Search: คืนข้อมูลที่เกี่ยวข้อง
+            Search-->>Agent: ส่ง Observation กลับ
+        else เลือกใช้ Calculator Tool
+            Agent->>Calc: ส่งนิพจน์ที่ต้องการคำนวณ
+            Calc->>Calc: ประมวลผลการคำนวณ
+            Calc-->>Agent: ส่งผลลัพธ์การคำนวณกลับ
+        end
+    end
+    
+    Agent->>Agent: สร้างคำตอบสุดท้าย
+    Agent->>Output: ส่งคำตอบไปแสดงผล
+    Output->>User: แสดงคำตอบให้ผู้ใช้
 ```
 
-## คำถามทดสอบและตัวอย่างผลลัพธ์
+## ตัวอย่างคำถามและวิธีการคิดของ Agent
 
-โปรเจคนี้มีคำถามทดสอบใน `questions.txt` จำนวน 10 คำถาม ตัวอย่างเช่น:
-
-### คำถาม 1: วัตถุดิบหลักในการทำต้มยำกุ้งมีอะไรบ้าง?
+### ตัวอย่างที่ 1: "วัตถุดิบหลักในการทำต้มยำกุ้งมีอะไรบ้าง?"
 
 ```mermaid
 graph TD
     A[คำถาม: วัตถุดิบหลักในการทำต้มยำกุ้งมีอะไรบ้าง?] --> B[Agent คิด]
-    B --> C{เลือก Tool}
-    C -->|Search Tool| D[ค้นหา: วัตถุดิบ ต้มยำกุ้ง]
+    B --> C[เลือก Search Tool]
+    C --> D[ค้นหา: วัตถุดิบ ต้มยำกุ้ง]
     D --> E[พบข้อมูลเกี่ยวกับวัตถุดิบต้มยำกุ้ง]
     E --> F[สร้างคำตอบจากข้อมูลที่พบ]
-    F --> G[คำตอบละเอียดเกี่ยวกับวัตถุดิบต้มยำกุ้ง]
 ```
 
-**ตัวอย่างคำตอบ:**
-```
-วัตถุดิบหลักในการทำต้มยำกุ้งประกอบด้วย:
-
-1. กุ้งสด (กุ้งแม่น้ำหรือกุ้งทะเล)
-2. น้ำซุปหรือน้ำเปล่า
-3. สมุนไพรหลัก:
-   - ข่า (หั่นเป็นแว่นบางๆ)
-   - ตะไคร้ (ทุบและหั่นท่อน)
-   - ใบมะกรูด (ฉีก)
-4. พริกขี้หนูสด
-5. น้ำปลา
-6. น้ำมะนาว
-7. เห็ดฟาง หรือเห็ดนางฟ้า
-8. หอมแดง
-9. ผักชี
-
-สำหรับต้มยำน้ำข้น จะมีวัตถุดิบเพิ่มเติม:
-- น้ำพริกเผา
-- นมข้น หรือกะทิ
-
-วัตถุดิบเหล่านี้รวมกันสร้างรสชาติเปรี้ยว เผ็ด และหอมกลิ่นสมุนไพรที่เป็นเอกลักษณ์ของต้มยำกุ้ง
-```
-
-### คำถาม 2: ทำไมส้มตำไทยถึงมีรสชาติต่างจากส้มตำลาว?
+### ตัวอย่างที่ 2: "ถ้าต้องทำต้มยำกุ้งสำหรับ 5 คน ต้องใช้กุ้งกี่ตัว?"
 
 ```mermaid
 graph TD
-    A[คำถาม: ทำไมส้มตำไทยถึงมีรสชาติต่างจากส้มตำลาว?] --> B[Agent คิด]
-    B --> C{เลือก Tool}
-    C -->|Search Tool| D[ค้นหา: ความแตกต่าง ส้มตำไทย ส้มตำลาว]
-    D --> E[พบข้อมูลเกี่ยวกับประวัติและความแตกต่าง]
-    E --> F[สร้างคำตอบเปรียบเทียบความแตกต่าง]
-    F --> G[คำตอบละเอียดพร้อมประวัติความเป็นมา]
+    A[คำถาม: ถ้าต้องทำต้มยำกุ้งสำหรับ 5 คน ต้องใช้กุ้งกี่ตัว?] --> B[Agent คิด]
+    B --> C[เลือก Search Tool]
+    C --> D[ค้นหา: สูตรต้มยำกุ้ง จำนวนกุ้ง]
+    D --> E[พบว่าสูตรมาตรฐานใช้ 3-4 ตัวต่อคน]
+    E --> F[เลือก Calculator Tool]
+    F --> G[คำนวณ: 4 * 5]
+    G --> H[ได้ผลลัพธ์ = 20]
+    H --> I[สร้างคำตอบ: ควรใช้กุ้ง 15-20 ตัว]
 ```
 
-**ตัวอย่างคำตอบ:**
-```
-ส้มตำไทยและส้มตำลาวมีรสชาติที่แตกต่างกันเนื่องจากหลายปัจจัย:
-
-1. รสชาติหลัก:
-   - ส้มตำไทย: มีความหวานมากกว่า ความเผ็ดน้อยกว่า และมีความกลมกล่อมจากการผสมผสานรสชาติหวาน เปรี้ยว เค็ม เผ็ด
-   - ส้มตำลาว (ตำบักหุ่ง): มีความเผ็ดจัดกว่า เน้นรสเค็มจากน้ำปลาร้า และรสเปรี้ยวจากมะนาว มีรสหวานน้อยกว่า
-
-2. ส่วนประกอบที่แตกต่าง:
-   - ส้มตำไทย: ใส่น้ำตาลปี๊บ กุ้งแห้ง และถั่วลิสง
-   - ส้มตำลาว: ใส่น้ำปลาร้า มักไม่ใส่กุ้งแห้งและน้ำตาลปี๊บ หรือใส่ในปริมาณน้อย
-
-3. ประวัติความเป็นมา:
-   ตามที่ระบุในข้อมูลที่มี ส้มตำมีต้นกำเนิดจากอาหารของชาวลาวในภาคตะวันออกเฉียงเหนือของไทย (อีสาน) แต่เมื่อแพร่หลายไปทั่วประเทศไทย ได้มีการปรับเปลี่ยนรสชาติให้เข้ากับความชอบของคนไทยทั่วไป โดยเพิ่มความหวานและลดความเผ็ดลง
-
-4. วิธีการปรุง:
-   - การโขลกส่วนผสมของส้มตำไทยจะนุ่มนวลกว่า เพื่อให้รสชาติกลมกล่อม
-   - การโขลกส้มตำลาวมักจะแรงกว่าเพื่อให้รสชาติเข้มข้น
-
-การปรับรสชาตินี้สะท้อนให้เห็นถึงวัฒนธรรมการรับประทานอาหารที่แตกต่างกัน และการพัฒนาของอาหารเมื่อแพร่กระจายจากต้นกำเนิดไปยังพื้นที่ใหม่
-```
-
-## ข้อแนะนำสำหรับการปรับแต่ง Prompt
+## เทคนิคการปรับแต่ง Prompt เพื่อประสิทธิภาพที่ดีขึ้น
 
 ```mermaid
 graph TD
-    A[การปรับแต่ง Prompt] --> B{จุดประสงค์}
+    A[การปรับแต่ง Prompt] --> B[ความเฉพาะเจาะจง]
+    A --> C[กระบวนการคิด]
+    A --> D[การใช้ Tools]
+    A --> E[รูปแบบการตอบ]
     
-    B --> C[ความเฉพาะเจาะจง]
-    B --> D[รูปแบบคำตอบ]
-    B --> E[พฤติกรรมของ Agent]
+    B --> B1[ระบุชนิดอาหารที่เชี่ยวชาญ]
+    B --> B2[ระบุภูมิภาคอาหารไทย]
     
-    C --> C1[ระบุประเภทอาหารที่ต้องการ]
-    C --> C2[ระบุภูมิภาคของอาหารไทย]
+    C --> C1[แนะนำให้คิดเป็นขั้นตอน]
+    C --> C2[ให้วิเคราะห์คำถามก่อนตอบ]
     
-    D --> D1[ขั้นตอนการทำอาหารแบบละเอียด]
-    D --> D2[ข้อมูลวัตถุดิบและทางเลือก]
+    D --> D1[อธิบายเงื่อนไขการใช้ Tools]
+    D --> D2[กำหนดลำดับความสำคัญของ Tools]
     
-    E --> E1[ให้คำแนะนำเพิ่มเติม]
-    E --> E2[เปรียบเทียบอาหารคล้ายกัน]
+    E --> E1[โครงสร้างคำตอบมาตรฐาน]
+    E --> E2[รูปแบบการนำเสนอสูตรอาหาร]
 ```
 
-ตัวอย่างการปรับแต่งที่ดี:
+## ข้อแนะนำในการพัฒนา Simple Agent ให้ดียิ่งขึ้น
 
+```mermaid
+mindmap
+  root((การพัฒนา Agent))
+    เพิ่ม Tools เฉพาะทาง
+      Recipe Tool
+      Nutrition Calculator
+      Ingredient Substitute Tool
+    ปรับปรุงข้อมูล
+      เพิ่มข้อมูลอาหารไทยหลากหลายภูมิภาค
+      เพิ่มข้อมูลอาหารไทยสมัยใหม่
+      เพิ่มข้อมูลประวัติความเป็นมา
+    ปรับปรุง Prompt
+      ระบุบุคลิกภาพเฉพาะ
+      กำหนดโครงสร้างคำตอบ
+      เพิ่มตัวอย่างการตอบ
+    เพิ่มความสามารถ
+      สร้างเมนูตามข้อจำกัด
+      คำนวณคุณค่าทางโภชนาการ
+      แนะนำการดัดแปลงสูตร
 ```
-คุณเป็นเชฟอาหารไทยที่มีประสบการณ์มากกว่า 30 ปี ตอบคำถามโดยใช้ความรู้จากข้อมูลที่มีอยู่ ให้คำแนะนำเกี่ยวกับอาหารไทยแท้ๆ
 
-เมื่อถูกถามเกี่ยวกับวิธีทำอาหาร ให้อธิบายเป็นขั้นตอนชัดเจน เรียงตามลำดับ พร้อมระบุ:
-1. วัตถุดิบที่จำเป็น พร้อมปริมาณโดยประมาณ
-2. วัตถุดิบทดแทนที่อาจหาได้ง่ายกว่า
-3. เทคนิคพิเศษที่จะช่วยให้อาหารมีรสชาติดีขึ้น
-4. ข้อควรระวังในขั้นตอนสำคัญ
+## แหล่งข้อมูลเพิ่มเติม
 
-ใช้ภาษาเป็นกันเอง แต่ให้รายละเอียดครบถ้วนและถูกต้องตามตำรับดั้งเดิม
+```mermaid
+graph LR
+    A[แหล่งข้อมูลเพิ่มเติม] --> B[เอกสาร Langflow]
+    A --> C[คู่มือการสร้าง Agents]
+    A --> D[เอกสารเกี่ยวกับอาหารไทย]
+    
+    B --> B1[Langflow Documentation]
+    B --> B2[Starter Projects: Simple Agent]
+    
+    C --> C1[คู่มือการใช้งาน RAG]
+    C --> C2[การสร้าง Agent ขั้นสูง]
+    
+    D --> D1[ตำราอาหารไทย]
+    D --> D2[Thai Food Heritage Archive]
 ```
 
 ## โครงสร้างไฟล์ของโปรเจกต์
@@ -429,6 +430,24 @@ hand-on_2-3/
 ```
 
 ## สรุป
+
+```mermaid
+graph TD
+    A[Simple Agent สำหรับข้อมูลอาหารไทย] --> B[ความสามารถหลัก]
+    B --> C[ตอบคำถามเกี่ยวกับอาหารไทย]
+    B --> D[คำนวณปริมาณส่วนผสม]
+    B --> E[อธิบายวิธีการทำและประวัติ]
+    
+    A --> F[ประโยชน์]
+    F --> G[เข้าถึงข้อมูลอาหารไทยได้อย่างสะดวก]
+    F --> H[ปรับแต่งสูตรตามความต้องการ]
+    F --> I[สืบทอดวัฒนธรรมอาหารไทย]
+    
+    A --> J[การนำไปต่อยอด]
+    J --> K[แอปพลิเคชัน Cookbook]
+    J --> L[ระบบแนะนำวัตถุดิบทดแทน]
+    J --> M[ระบบออกแบบเมนูเพื่อสุขภาพ]
+```
 
 Simple Agent ใน Langflow เป็นเครื่องมือที่ทรงพลังสำหรับการสร้างแอปพลิเคชัน AI ที่สามารถแก้ปัญหาและตอบคำถามได้โดยอัตโนมัติ ด้วยการรวม Simple Agent เข้ากับเทคโนโลยี RAG และข้อมูลอาหารไทย ทำให้เราสามารถสร้างแชทบอทที่:
 
