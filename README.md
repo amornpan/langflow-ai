@@ -1,4 +1,4 @@
-# 𝐕𝐢𝐬𝐮𝐚𝐥 𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐦𝐞𝐧𝐭 𝐨𝐟 𝐀𝐠𝐞𝐧𝐭𝐢𝐜 𝐀𝐈 𝐰𝐢𝐭𝐡 Langflow
+# Visual Development of Agentic AI with Langflow
 
 ## รายละเอียด Hand-on
 
