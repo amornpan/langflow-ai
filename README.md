@@ -1,17 +1,5 @@
 # Visual Development of Agentic AI with Langflow
 
-## รายละเอียด Hand-on
-
-สำหรับรายละเอียดและขั้นตอนการทำ Workshop สามารถดูได้ตามโฟลเดอร์ต่างๆ ดังนี้:
-- **hand-on_1** - รายละเอียดและตัวอย่างการทำ Hand-on 1
-- **hand-on_2-1** - รายละเอียดและตัวอย่างการทำ Hand-on 2-1
-- **hand-on_2-2** - รายละเอียดและตัวอย่างการทำ Hand-on 2-2
-- **hand-on_2-3** - รายละเอียดและตัวอย่างการทำ Hand-on 2-3
-
-## วิดีโอแนะนำการติดตั้ง
-คุณสามารถดูวิดีโอแนะนำการติดตั้งและการใช้งานได้ที่:
-[https://drive.google.com/drive/u/7/folders/10wr2hp4kalM-TQ8XwNG04_0jIPzqff6X](https://drive.google.com/drive/u/7/folders/10wr2hp4kalM-TQ8XwNG04_0jIPzqff6X)
-
 ## จุดประสงค์การเรียนรู้ Hand-on
 
 ### Setup & Interface
@@ -37,6 +25,19 @@
 - การจัดการ conversation flow
 - การออกแบบ error handling
 - การ optimize performance และ cost
+
+
+## รายละเอียด Hand-on
+
+สำหรับรายละเอียดและขั้นตอนการทำ Workshop สามารถดูได้ตามโฟลเดอร์ต่างๆ ดังนี้:
+- **hand-on_1** - Setup & Interface
+- **hand-on_2-1** - Basic prompting
+- **hand-on_2-2** - Vector Store RAG
+- **hand-on_2-3** - Simple Agent
+
+## วิดีโอแนะนำการติดตั้ง
+คุณสามารถดูวิดีโอแนะนำการติดตั้งและการใช้งานได้ที่:
+[https://drive.google.com/drive/u/7/folders/10wr2hp4kalM-TQ8XwNG04_0jIPzqff6X](https://drive.google.com/drive/u/7/folders/10wr2hp4kalM-TQ8XwNG04_0jIPzqff6X)
 
 
 ## จุดประสงค์การเรียนรู้ของ Workshop
