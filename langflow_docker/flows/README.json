@@ -1,6 +1,0 @@
-{
-  "description": "โฟลเดอร์นี้สำหรับเก็บ Langflow flows ที่ต้องการ mount เข้า container",
-  "usage": "วางไฟล์ .json ของ flows ที่ export จาก Langflow ไว้ในโฟลเดอร์นี้",
-  "example": "basic-chat-flow.json, agent-flow.json เป็นต้น",
-  "note": "ไฟล์ที่อยู่ในโฟลเดอร์นี้จะถูก mount เข้า container ที่ /home/langflow/flows"
-}
